@@ -24,17 +24,8 @@ def start():
 
     return model
 
-def processFile(path_input): 
-    uploaded_file = genai.upload_file(path=path_input)
-    print (uploaded_file)
-
-    pdfFile = genai.get_file(uploaded_file.name)
-    print(f"File URI: {pdfFile.uri}")
-
-    return pdfFile
-
-
 def processFile(path_input):
+    print ("\n\n\n\n\n 2 \n\n\n\n\n")
     uploaded_file = genai.upload_file(path=path_input)
     print (uploaded_file)
 
