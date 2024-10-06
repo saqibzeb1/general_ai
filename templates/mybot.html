@@ -1,85 +1,417 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title> Generic AI </title>
-        <style>
-            body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-            .chat-container { width: 400px; height: 600px; background-color: #fff; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
-            .chat-header { background-color: #007bff; color: #fff; padding: 15px; text-align: center; }
-            .chat-body { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-            .chat-input { display: flex; padding: 10px; border-top: 1px solid #ddd; }
-            .chat-input textarea { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; resize: none; }
-            .chat-input button { background-color: #007bff; color: #fff; border: none; padding: 10px 20px; font-size: 16px; margin-left: 10px; cursor: pointer; border-radius: 4px; }
-            .message { margin-bottom: 10px; padding: 10px; border-radius: 10px; max-width: 75%; }
-            .user-message { background-color: #007bff; color: #fff; align-self: flex-end; }
-            .bot-message { background-color: #e4e6eb; color: #000; align-self: flex-start; }
-        </style>
-    </head>
-    <body>
-        <div class="chat-container">
-            <div class="chat-header">Chatgpt ++ </div>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generic AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c2c2c; /* Dark background */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrollbars when sidebar opens */
+        }
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+        .container.shifted {
+            margin-left: 250px; /* Adjust when sidebar is open */
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #1e1e1e; /* Dark sidebar */
+            color: #fff;
+            padding: 20px;
+            overflow-y: auto;
+            position: fixed;
+            left: -250px; /* Initially hidden */
+            transition: left 0.3s ease;
+            height: 100vh;
+        }
+        .sidebar.open {
+            left: 0; /* Slide in when open */
+        }
+        .toggle-button {
+            position: fixed;
+            left: 0;
+            top: 20px;
+            background-color: #007bff;
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+            z-index: 10; 
+        }
+        .chat-container {
+            flex: 1;
+            background-color: #2b2b2b; 
+            display: flex;
+            flex-direction: column;
+            margin-left: 50px; 
+        }
+        .chat-header {
+            background-color: #007bff; 
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+        }
+        .chat-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #444; 
+        }
+        .chat-input textarea {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #444; 
+            border-radius: 4px;
+            resize: none;
+            background-color: #3c3c3c; 
+            color: #fff; 
+        }
+        .chat-input button {
+            background-color: #007bff; 
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 75%;
+        }
+        .user-message {
+            background-color: #007bff; 
+            color: #fff;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #444; 
+            color: #fff;
+            align-self: flex-start;
+        }
+
+        .expand-button {
+            background-color: #007bff; 
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .attached-file {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #2b2b2b; 
+            color: #fff;
+        }
+        .arrow {
+            cursor: pointer;
+            margin-left: 8px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .arrow:before {
+            content: '';
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            display: inline-block;
+            padding: 5px;
+            transform: rotate(135deg);
+        }
+
+        .arrow.expanded:before {
+            transform: rotate(-45deg);
+        }
+        .chat-item {
+            color: #fff;
+            margin: 10px 0;
+            padding: 1px;
+            border-radius: 8px;
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+
+
+        .chat-message {
+            background-color: transparent;
+            font-family: 'Calibri', sans-serif;
+            font-size: 14px; 
+            display: flex;
+            align-items: center;
+            width: 100%; 
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis; 
+
+        }
+
+        .chat-link {
+            text-decoration: none;
+            color: inherit;
+        }
+        .chat-message i {
+            margin-left: 8px;
+            cursor: pointer;
+            transition: transform 0.5s;
+            margin-left: auto; 
+        }
+
+        .attached-file {
+            margin-top: 1px;
+            padding: 5px;
+            border-radius: 4px;
+            color: #fff;
+            background-color: transparent;
+            display: none; 
+        }
+        #chat-history {
+            list-style-type: none; 
+            padding: 0; 
+            margin-left: 34px; 
+            display: none;
+        }
+        .arrow-icon {
+            position: absolute; 
+            top: 0; 
+            right: -13px; 
+            margin-left: auto; 
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            padding: 5px;
+            border-radius: 4px;
+            display:none;
+        }
+        .chat-item:hover .arrow-icon {
+            display: inline; 
+            margin-left: auto; 
+        }
+    </style>
+</head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<body>
+    <div class="toggle-button" onclick="toggleSidebar()">☰</div> 
+    
+    <div class="container" id="chat-container">
+        <div class="sidebar" id="chat-sidebar"> 
+            <h2 style="margin-left: 40px; margin-top: 6px;">Chat History</h2>
+            <ul id="chat-history">
+                {% for chat in chat_history %}  
+                    <li class="chat-item">
+                        <div class="chat-message">
+                            <a href="#" onclick="handleChatClick(event, '{{ chat.message }}', '{{ chat.conv_id }}')" class="chat-link">{{ chat.message }}</a>                         
+                            <span class="arrow-icon">
+                                <i class="fa-solid fa-arrow-down" onclick="toggleExpand(this)"></i>
+                            </span>
+                        </div>
+                        <div class="attached-file" style="display: none;"> 
+                            {% if chat.attached_file %}
+                                <p style="font-size: 12px; color: #ccc;">1. {{ chat.attached_file_display }}</p> 
+                            {% else %}
+                                <p style="font-size: 12px; color: #ccc;">This chat has no attachments</p> 
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    
+        <div class="chat-container"> <!-- Chat container -->
+            <input type="hidden" id="hidden-filename" />
+            <input type="hidden" id="conv-id" />
+            <div class="chat-header">ChatGPT ++</div>
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-input">
                 <textarea id="user-input" rows="2" placeholder="Type your message here..."></textarea>
                 <button onclick="sendMessage()">Send</button>
                 <button onclick="document.getElementById('file-input').click()" style="background:none; border:none; cursor:pointer;">
-                    <img src="https://img.icons8.com/ios-glyphs/30/000000/plus-math.png" alt="Upload" style="width: 20px; height: 20px;">
+                    <img src="https://img.icons8.com/ios-glyphs/30/FFFFFF/plus-math.png" alt="Upload" style="width: 20px; height: 20px;">
                 </button> <!-- Plus Icon Button -->
                 <input type="file" id="file-input" style="display:none;" onchange="uploadFile()"> <!-- Hidden File Input -->
             </div>
-            <div id="uploaded-files" style="margin-top: 10px; margin-bottom: 10px; margin-right: 10px; font-size: 16px; text-align: right; font-weight: bold;"></div> <!-- Container for displaying file paths -->
-
+            <div id="uploaded-files" style="margin-top: 10px; margin-bottom: 10px; margin-right: 10px; font-size: 16px; text-align: right; font-weight: bold;"></div> <!-- File display -->
         </div>
-        <script>
-            function sendMessage() {
-                const userInput = document.getElementById('user-input');
-                const chatBody = document.getElementById('chat-body');
-                const userMessage = document.createElement('div');
-                userMessage.classList.add('message', 'user-message');
-                userMessage.innerText = userInput.value;
-                chatBody.appendChild(userMessage);
-                chatBody.scrollTop = chatBody.scrollHeight;
-                const uploadedFilesDiv = document.getElementById('uploaded-files');
-                const filePath = uploadedFilesDiv.textContent.trim(); // Get the file path from the uploaded files div
+    </div>
+    
+    <script>
+        function sendMessage() {
+            var convID = document.getElementById('conv-id');
+            const conv_id_val = convID.value;
+            const userInput = document.getElementById('user-input');
+            const chatBody = document.getElementById('chat-body');
+            const chatHistory = document.getElementById('chat-history');
+            
+            const userMessage = document.createElement('div');
+            userMessage.classList.add('message', 'user-message');
+            userMessage.innerText = userInput.value;
+            chatBody.appendChild(userMessage);
+            chatBody.scrollTop = chatBody.scrollHeight;
 
-                fetch('/chat', {
+   
+            if (conv_id_val === null || conv_id_val === '') {
+                const userHistory = document.createElement('li');
+                userHistory.innerText = userInput.value;
+                chatHistory.appendChild(userHistory);
+            }
+
+            const uploadedFilesDiv = document.getElementById('uploaded-files');
+            var filePath = uploadedFilesDiv.textContent.trim(); 
+            const hiddenFilenameInput = document.getElementById('hidden-filename');
+            const filename = hiddenFilenameInput.value;
+            if ((!filePath || filePath === '') && filename && typeof filename !== 'undefined' && filename !== 'undefAjbJBBJBvVKVnKHBined' && filename !== '') {
+                filePath = 'uploads/' + filename;
+            }
+            const conv_id_send = convID.value;
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userInput.value, path: filePath, filename: filename, conversation_id: conv_id_send })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const conv_id_response = data.conversation_id;
+                convID.value = conv_id_response;
+
+                const botMessage = document.createElement('div');
+                botMessage.classList.add('message', 'bot-message');
+                botMessage.innerText = data.response;
+                chatBody.appendChild(botMessage);
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                const botHistory = document.createElement('li');
+                botHistory.innerText = data.response;
+            });
+
+            userInput.value = '';
+        }
+
+
+        function uploadFile() {
+            const fileInput = document.getElementById('file-input');
+            const hiddenFilenameInput = document.getElementById('hidden-filename');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                hiddenFilenameInput.value = file.name;
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/upload', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: userInput.value, path: filePath })
+                    body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
-                    const botMessage = document.createElement('div');
-                    botMessage.classList.add('message', 'bot-message');
-                    botMessage.innerText = data.response;
-                    chatBody.appendChild(botMessage);
-                    chatBody.scrollTop = chatBody.scrollHeight;
+                    const uploadedFilesDiv = document.getElementById('uploaded-files');
+                    const fileIcon = document.createElement('div');
+                    fileIcon.style.color = 'white';
+                    fileIcon.innerHTML = `<img src="https://img.icons8.com/ios-glyphs/30/FFFFFF/file.png" style="font-color: white; width: 16px; height: 16px; margin-right: 5px;"> ${data.file_path}`;
+                    uploadedFilesDiv.appendChild(fileIcon);
                 });
-                userInput.value = '';
             }
-            function uploadFile() {
-                const fileInput = document.getElementById('file-input');
-                const file = fileInput.files[0];
-                
-                if (file) {
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        const uploadedFilesDiv = document.getElementById('uploaded-files');
-                        const fileIcon = document.createElement('div');
-                        fileIcon.innerHTML = `<img src="https://img.icons8.com/ios-glyphs/30/000000/file.png" style="width: 16px; height: 16px; margin-right: 5px;"> ${data.file_path}`;
-                        uploadedFilesDiv.appendChild(fileIcon);
-                    });
+        }
+      
+        function toggleSidebar() {
+            const sidebar = document.getElementById('chat-sidebar');
+            const container = document.getElementById('chat-container');
+            const chatHistory = document.getElementById('chat-history');
+            
+            sidebar.classList.toggle('open');
+            container.classList.toggle('shifted');
+
+            // Show chat history if sidebar is open, otherwise hide it
+            if (sidebar.classList.contains('open')) {
+                chatHistory.style.display = 'block';
+            } else {
+                chatHistory.style.display = 'none';
+            }
+        }
+
+        function toggleExpand(arrow) {
+            const attachedFileDiv = arrow.closest('.chat-message').parentElement.querySelector('.attached-file'); 
+            const isVisible = attachedFileDiv.style.display === 'block'; 
+
+            attachedFileDiv.style.display = isVisible ? 'none' : 'block'; 
+            arrow.classList.toggle('expanded', !isVisible); 
+        }
+        function handleChatClick(event, message, convId) {
+            event.preventDefault();
+            const chatMessage = event.target.closest('.chat-item'); 
+            document.querySelectorAll('.chat-item').forEach(msg => {
+                msg.style.backgroundColor = 'transparent';
+                msg.style.margin= '10px 0';
+                msg.style.padding= '1px';
+            });
+
+            chatMessage.style.backgroundColor = 'rgba(128, 128, 128, 0.2)';
+            chatMessage.style.borderRadius = '8px';
+            chatMessage.style.padding = '10px'; 
+            chatMessage.style.margin = '5px 0'; 
+            console.log("Chat message clicked:", message);
+
+            fetch(`/get_chat_content/${convId}`) 
+            .then(response => response.json())
+            .then(data => {
+                const chatBody = document.getElementById('chat-body');
+                var conv_hidden = document.getElementById('conv-id');
+                const hiddenFilenameInput = document.getElementById('hidden-filename');
+                if (typeof data.attached_file_display == 'undefined' ) {
+                    hiddenFilenameInput.value = "undefAjbJBBJBvVKVnKHBined"; 
+                } else {
+                    hiddenFilenameInput.value = data.attached_file_display; 
                 }
-            }
-        </script>
-    </body>
-    </html>
+                conv_hidden.value = data.conv_id; 
+                console.log("Chat content loaded:", data.content);
+                chatBody.innerHTML = ''; 
+
+                data.content.forEach(chat => {
+                    console.log('chat: ',chat)
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message');
+                    if (chat.role === 'user') {
+                        messageDiv.classList.add('user-message');
+                    } else if (chat.role === 'model') {
+                        messageDiv.classList.add('bot-message');
+                    }
+
+                    messageDiv.innerText = chat.text.text; 
+                    chatBody.appendChild(messageDiv);
+                });
+
+            })
+            .catch(error => {
+                console.error("Error loading chat content:", error);
+            });
+        }
+        window.onload = function() {
+            var convID = document.getElementById('conv-id');
+            convID.value = null; 
+            var hiddenFilenameInput = document.getElementById('hidden-filename');
+            hiddenFilenameInput.value = 'undefAjbJBBJBvVKVnKHBined'; 
+        }
+    </script>
+</body>
+</html>
