@@ -3,7 +3,6 @@ import threading
 import google.generativeai as genai
 import time
 
-
 def start():
     KEY = "AIzaSyD8s8NqDu8ZJ6SvY9x2uwrF3EIWqFrSATs" 
     pdf_file = "info.pdf" 
