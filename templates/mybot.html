@@ -314,6 +314,8 @@
             const hiddenFilenameInput = document.getElementById('hidden-filename');
             const file = fileInput.files[0];
             
+            console.log(file)
+
             if (file) {
                 hiddenFilenameInput.value = file.name;
                 const formData = new FormData();
