@@ -322,6 +322,8 @@ def upload():
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
     
+    print (request.files)
+
     file = request.files['file']
     file_path = os.path.join('uploads', file.filename)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)

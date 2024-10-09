@@ -4,10 +4,6 @@ import google.generativeai as genai
 import time
 
 def start():
-    KEY = "AIzaSyD8s8NqDu8ZJ6SvY9x2uwrF3EIWqFrSATs" 
-    pdf_file = "info.pdf" 
-    name = "info.pdf"
-
     genai.configure(api_key=KEY)
 
     file_path = "files\info.pdf"  
@@ -17,13 +13,6 @@ def start():
     pdfFile = genai.get_file(uploaded_file.name)
     print(f"File URI: {pdfFile.uri}")
 
-    # while pdfFile.state.name == "PROCESSING":
-    #     print(".", end="")
-    #     time.sleep(10)
-    #     pdfFile = genai.get_file(pdfFile.name)
-
-    # if pdfFile.state.name == "FAILED":
-    #     raise ValueError(pdfFile.state.name)
 
     model = genai.GenerativeModel(
         model_name="gemini-1.5-pro-latest",
