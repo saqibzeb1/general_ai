@@ -9,8 +9,15 @@ from firebase_admin import credentials, firestore
 import uuid
 from uuid import uuid4
 from datetime import datetime, timezone
+import markdown
+import html
+import requests
+import json
+from dotenv import load_dotenv
+load_dotenv()
 
-
+from llama_parse import LlamaParse
+from llama_index.core import SimpleDirectoryReader
 
 def start():
     load_dotenv()    
@@ -21,15 +28,23 @@ def start():
     genai.configure(api_key=KEY)
 
     model = genai.GenerativeModel(
-        # model_name="gemini-1.5-flash-8b",
-        model_name="gemini-1.5-pro-latest",
+        model_name="gemini-1.5-flash-8b",
+        # model_name="gemini-1.5-pro-latest",
         system_instruction=[
-            "You are a helpful transcriber that can accurately transcribe text from images and PDFs. and videos",
-            "Your mission is to transcribe text from the provided PDF, image or any other kind of files",
-            "You can help with general queries and answer question for asked queries incase no input files are provided"
+            "Carefully go through the entire code files provided",
+            "Analyze the files thoroughly considering all minor details before responding ",
+            "Answer the questions asked related to file shortly and precisely",
+            "Consider the chat context before responding, but don't include the previous responses while responding. ONly respond the current question being asked, while keeping the conversation context thoroughly in consideration",
+            "when asked to return code, only return code with minor related explanation of key concepts if required"
         ],
-    )
+        # system_instruction=[
+        #     "You are a helpful transcriber that can accurately transcribe text from images and PDFs. and videos",
+        #     "Your mission is to transcribe text from the provided PDF, image or any other kind of files",
+        #     "You can help with general queries and answer question for asked queries incase no input files are provided"
+        # ],
+        
 
+    )
     return model
 
 def processFile(file_name, path_input, storage_name):
@@ -56,7 +71,7 @@ def processFile(file_name, path_input, storage_name):
         pdfFile = genai.get_file(storage_name)
         print(f"File URI: {pdfFile.uri}")
 
-        print('\n\n\n\n\n  pdfFile got \n\n\n\n\n\n', pdfFile, '\n\n\n\n\n\n\n\n')
+        # print('\n\n\n\n\n  pdfFile got \n\n\n\n\n\n', pdfFile, '\n\n\n\n\n\n\n\n')
 
         return pdfFile
     except Exception as e:
@@ -87,7 +102,19 @@ def retryProcessFile(file_name, path_input):
         return None
 
 
+def parseFile(filepath):
+    # set up parser
+    parser = LlamaParse(
+        result_type="text"
+    )
 
+    file_extractor = {".pdf": parser}
+    documents = SimpleDirectoryReader(input_files=[filepath], file_extractor=file_extractor).load_data()
+    for document in documents:
+        simplified_text = document.text
+        print(simplified_text)
+    print(documents)
+    return simplified_text
 
 def add_record_file(display_name, storage_name, state, expiry):
     """Add a record to Firestore."""
@@ -139,7 +166,8 @@ def add_record_chat(conv_id, message, filename, display_filename, file_path):
         'attached_file_path': file_path,
         'attached_file_display': display_filename,
         'created_date': datetime.now(timezone.utc),
-        'uuid': record_uuid
+        'uuid': record_uuid,
+        'is_deleted': False
     })
 
     return record_uuid
@@ -148,14 +176,13 @@ def get_chats():
     """ Get chats from firestore """
     print ("\n\n\n\n 1 \n\n\n\n\n")
 
-    chat_ref = db.collection('chat_history')
+    chat_ref = db.collection('chat_history') \
+             .where('is_deleted', '==', False) \
+             .order_by('created_date', direction='DESCENDING')
+    
     chats = chat_ref.get()
-    chat_records = [chat.to_dict() for chat in chats if 'created_date' in chat.to_dict()]
+    chat_records = [chat.to_dict() for chat in chats]
 
-    chat_records = [chat.to_dict() for chat in chats]    
-    for chat in chats:
-        chat_records.append(chat.to_dict())
-        
     return chat_records
 
 def get_chat_by_conv_id(conv_id):
@@ -164,9 +191,6 @@ def get_chat_by_conv_id(conv_id):
     chat = chat_ref.get()
 
     return chat[0].to_dict() if chat else None
-
-
-
 
 def update_chat_history(conv_id, user_ques, model_resp, conversation_context, storage_name):
     chat_rec = get_chat_by_conv_id(conv_id)
@@ -206,6 +230,26 @@ def update_chat_history(conv_id, user_ques, model_resp, conversation_context, st
 
 
 
+
+
+def set_missing_created_dates():
+    chat_ref = db.collection('chat_history')
+    chats = chat_ref.get()
+
+    # for chat in chats:
+    #     if 'created_date' not in chat.to_dict():
+    #         print (chat.id)
+    #         chat_ref.document(chat.id).update({'created_date': datetime(2024, 10, 1, tzinfo=timezone.utc)})
+
+    for chat in chats:
+        if 'is_deleted' not in chat.to_dict():
+            print (chat.id)
+            chat_ref.document(chat.id).update({'is_deleted': False})
+
+
+
+
+
 app = Flask(__name__)
 model = start()
 cred = credentials.Certificate('/home/saqib/Desktop/firebase_credentials.json')
@@ -221,6 +265,7 @@ db = firestore.client()
 @app.route('/')
 def home():
     start()
+    # set_missing_created_dates()
     chat_history = get_chats()
     return render_template('mybot.html',  chat_history=chat_history)
 
@@ -228,10 +273,57 @@ def home():
 
 @app.route('/get_chat_content/<conv_id>', methods=['GET'])
 def get_chat(conv_id):
+    print ('\n\n\n in get chat \n\n\conv id: n', conv_id)
     chat_record = get_chat_by_conv_id(conv_id) 
+    print ('\n\n\nchat record\n', chat_record)
+
+    
     if chat_record:
         return jsonify(chat_record)
     return jsonify({"error": "Chat not found"}), 404
+
+
+
+
+def get_response_local(user_message, file_path):
+    load_dotenv()
+    url = os.getenv("LLM_LOCAL")
+    url = url+'/api/generate'
+    file_pretext = 'Considering the follwing as raw text extracted from a PDF document, '
+
+
+    if file_path and file_path != '':
+        print ('\n processing file... \n\n')
+        file_content = parseFile(file_path)
+        print (file_content)
+        user_message = file_pretext+file_content+'.....' + user_message
+        print ('\n\n file processed ...\n')
+    
+    data = {
+        "model": "llama3.2:1b",
+        "prompt": user_message
+    }
+
+    try:
+        print ('\n\n\nawaiting response from local model....\n\n')
+        response = requests.post(url, json=data, stream=True)  
+        response.raise_for_status() 
+
+        full_text = ''
+        for chunk in response.iter_lines():
+            if chunk:
+                data = json.loads(chunk.decode('utf-8'))
+                full_text += data.get("response", "")
+                if data.get("done"):
+                    break
+        print(full_text)
+
+        return full_text
+
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+
+
 
 
 
@@ -243,9 +335,14 @@ def chat():
     user_message = request.json.get('message')
     input_file_path = request.json.get('path')
     conversation_id = request.json.get('conversation_id')
+    use_local_model = request.json.get('use_local_model')
     is_new_conversation = False
     storage_name = None
     print ('\n\n\n conv id \n\n\n\n', conversation_id)
+
+    if use_local_model == 'local':
+        response = get_response_local(user_message, input_file_path)
+        return jsonify({"response": response})
 
     if user_message is None:
         return jsonify({"response": "No message received"}), 400
@@ -277,7 +374,7 @@ def chat():
         input_file_name = request.json.get('filename')
 
         file_processed = processFile(input_file_name, input_file_path, storage_name)
-        print ('\n\n\n\n file_processed sent \n\n\n\n', file_processed, '\n\n\n\n\n')
+        # print ('\n\n\n\n file_processed sent \n\n\n\n', file_processed, '\n\n\n\n\n')
         storage_name = file_processed.name
         model_response = model.generate_content(
             [file_processed] + conversation_history,
@@ -330,6 +427,27 @@ def upload():
     file.save(file_path)
    
     return jsonify({"file_path": file_path,"file_name": file.filename})
+
+@app.route('/delete_chat/<conv_id>', methods=['POST'])
+def delete_chat_by_conv_id(conv_id):
+ 
+    print (conv_id)
+
+    # Get the chat reference
+    chat_ref = db.collection('chat_history').where('conv_id', '==', conv_id).limit(1)
+    chat = chat_ref.get()
+    
+    if chat:
+        chat_doc = chat[0]  # Get the first document
+        chat_ref = db.collection('chat_history').document(chat_doc.id)
+        chat_ref.update({'is_deleted': True})  # Set is_deleted to True
+        
+        return {"message": "Chat deleted successfully"}, 200  # Success response
+    else:
+        return {"message": "Chat not found"}, 404  # Not found response
+
+
+
 
 def run_flask_app():
     print("Server running on http://127.0.0.1:5000/")
