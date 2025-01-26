@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generic AI</title>
+    <title> 💀 Bot </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> <!-- Include marked.js -->
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,7 +43,7 @@
             position: fixed;
             left: 0;
             top: 20px;
-            background-color: #007bff;
+            background-color: #16161d;
             color: white;
             padding: 10px;
             cursor: pointer;
@@ -55,12 +57,22 @@
             flex-direction: column;
             margin-left: 50px; 
         }
-        .chat-header {
-            background-color: #007bff; 
-            color: #fff;
-            padding: 15px;
-            text-align: center;
-        }
+
+.chat-header {
+    background-color: #16161d; 
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    border: 2px solid #4a4a4a; 
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+    transition: all 0.3s ease; 
+}
+
+/* Optional: Add hover effect */
+.chat-header:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.7); /* Darker shadow on hover */
+}
         .chat-body {
             flex: 1;
             padding: 20px;
@@ -77,14 +89,21 @@
             flex: 1;
             padding: 10px;
             font-size: 16px;
-            border: 1px solid #444; 
-            border-radius: 4px;
+            border: 2px solid #444; 
+            border-radius: 5px;
             resize: none;
             background-color: #3c3c3c; 
             color: #fff; 
         }
+        .chat-input textarea:focus {
+            border: 1px solid #444; 
+            outline: none;
+            border: 2px solid #4a4a4a; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+            transition: all 0.3s ease; 
+        }
         .chat-input button {
-            background-color: #007bff; 
+            background-color: #16161d;
             color: #fff;
             border: none;
             padding: 10px 20px;
@@ -93,6 +112,12 @@
             cursor: pointer;
             border-radius: 4px;
         }
+
+        .chat-input button:hover {
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+            transition: all 0.3s ease;  
+        }
+ 
         .message {
             margin-bottom: 10px;
             padding: 10px;
@@ -100,15 +125,63 @@
             max-width: 75%;
         }
         .user-message {
-            background-color: #007bff; 
+            background-color: #16161d; 
             color: #fff;
             align-self: flex-end;
         }
-        .bot-message {
+
+
+        /* .bot-message {
             background-color: #444; 
             color: #fff;
             align-self: flex-start;
-        }
+        } */
+
+
+
+.bot-message {
+    background-color: #444; 
+    color: #fff;
+    align-self: flex-start;
+    padding: 10px; 
+    border-radius: 5px; 
+    margin: 5px 0; 
+    font-family: Arial, sans-serif; 
+    white-space: pre-wrap; 
+}
+
+.bot-message ul {
+    list-style-type: disc; 
+    padding-left: 20px; 
+}
+
+.bot-message ol {
+    list-style-type: decimal; 
+    padding-left: 20px; 
+}
+
+
+.bot-message code {
+    background-color: #333; 
+    color: #fff;
+    padding: 2px 4px; 
+    border-radius: 3px; 
+    font-family: 'Courier New', Courier, monospace; 
+}
+
+.bot-message pre {
+    background-color: #333; 
+    color: #fff;
+    padding: 10px; 
+    border-radius: 5px; 
+    overflow: auto; 
+    white-space: pre-wrap; 
+    margin: 0; 
+}
+
+
+
+
 
         .expand-button {
             background-color: #007bff; 
@@ -117,14 +190,6 @@
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
-        }
-
-        .attached-file {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 4px;
-            background-color: #2b2b2b; 
-            color: #fff;
         }
         .arrow {
             cursor: pointer;
@@ -187,6 +252,7 @@
             color: #fff;
             background-color: transparent;
             display: none; 
+            position:relative;
         }
         #chat-history {
             list-style-type: none; 
@@ -199,7 +265,7 @@
             top: 0; 
             right: -13px; 
             margin-left: auto; 
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+            background-color: rgba(0, 0, 0, 0.5);
             padding: 5px;
             border-radius: 4px;
             display:none;
@@ -208,9 +274,97 @@
             display: inline; 
             margin-left: auto; 
         }
+
+        .typing-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 20px;
+            gap: 5px;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background-color: #fff;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 80%, 100% {
+                opacity: 0;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
+        .delete-icon {
+            font-size: 12px;
+            color: grey;
+            position: absolute;
+            margin-bottom: -5px;
+            cursor: pointer;
+            margin-left: 180px;
+        }
+
+
+        .chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 15px;
+  background-color: #121212;
+  color: #fff;
+  border-bottom: 2px solid #444;
+  font-family: 'Arial', sans-serif;
+}
+
+
+            .header-content {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            }
+
+            .header-dropdown {
+            margin-left: auto; /* Push the dropdown to the right */
+            padding: 8px 12px;
+            font-size: 14px;
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            }
+
+            .header-dropdown:hover {
+            background-color: #555;
+            }
+
+            .header-dropdown:focus {
+            outline: none;
+            background-color: #444;
+            }
+
+            .chat-header select, .chat-header option {
+            background-color: #333;
+            color: #fff;
+            }
     </style>
 </head>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 <body>
     <div class="toggle-button" onclick="toggleSidebar()">☰</div> 
     
@@ -221,7 +375,7 @@
                 {% for chat in chat_history %}  
                     <li class="chat-item">
                         <div class="chat-message">
-                            <a href="#" onclick="handleChatClick(event, '{{ chat.message }}', '{{ chat.conv_id }}')" class="chat-link">{{ chat.message }}</a>                         
+                            <a href="#" onclick="handleChatClick(event, '{{ chat.conv_id }}')" class="chat-link">{{ chat.message }}</a>                         
                             <span class="arrow-icon">
                                 <i class="fa-solid fa-arrow-down" onclick="toggleExpand(this)"></i>
                             </span>
@@ -232,16 +386,25 @@
                             {% else %}
                                 <p style="font-size: 12px; color: #ccc;">This chat has no attachments</p> 
                             {% endif %}
+                            <i class="fas fa-trash delete-icon" 
+                            style="position: absolute; bottom: 5px; left: 5px; cursor: pointer;"
+                            data-conv-id="{{ chat.conv_id }}"></i>
                         </div>
                     </li>
                 {% endfor %}
             </ul>
         </div>
     
-        <div class="chat-container"> <!-- Chat container -->
+        <div class="chat-container">
             <input type="hidden" id="hidden-filename" />
             <input type="hidden" id="conv-id" />
-            <div class="chat-header">ChatGPT ++</div>
+            <div class="chat-header">
+                <div class="header-content">💀 💀</div>
+                <select class="header-dropdown">
+                  <option value="api">api</option>
+                  <option value="local">local</option>
+                </select>
+              </div>
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-input">
                 <textarea id="user-input" rows="2" placeholder="Type your message here..."></textarea>
@@ -265,7 +428,8 @@
             
             const userMessage = document.createElement('div');
             userMessage.classList.add('message', 'user-message');
-            userMessage.innerText = userInput.value;
+            const markdownUserHTML = marked.parse(userInput.value);
+            userMessage.innerHTML = decodeHTMLEntities(markdownUserHTML);
             chatBody.appendChild(userMessage);
             chatBody.scrollTop = chatBody.scrollHeight;
 
@@ -273,9 +437,11 @@
             if (conv_id_val === null || conv_id_val === '') {
                 const userHistory = document.createElement('li');
                 userHistory.innerText = userInput.value;
-                chatHistory.appendChild(userHistory);
+                userHistory.classList.add('chat-message', 'user-message'); // Add the same classes used for chat messages
+                chatHistory.prepend(userHistory);            
             }
 
+            var processText = '';
             const uploadedFilesDiv = document.getElementById('uploaded-files');
             var filePath = uploadedFilesDiv.textContent.trim(); 
             const hiddenFilenameInput = document.getElementById('hidden-filename');
@@ -283,26 +449,43 @@
             if ((!filePath || filePath === '') && filename && typeof filename !== 'undefined' && filename !== 'undefAjbJBBJBvVKVnKHBined' && filename !== '') {
                 filePath = 'uploads/' + filename;
             }
+
+            if (filePath && filePath != '') {
+                processText = 'Processing files ';
+            }
             const conv_id_send = convID.value;
+
+
+            // Add a placeholder "typing..." bot message
+            const botMessage = document.createElement('div');
+            botMessage.classList.add('message', 'bot-message');
+            botMessage.innerHTML = `<span class="typing-indicator"> ${processText} <span></span><span></span><span></span></span>`;
+            chatBody.appendChild(botMessage);
+            chatBody.scrollTop = chatBody.scrollHeight;
+            const modelType = document.querySelector('.header-dropdown');
+            const modelTypeValue = modelType.value;
 
             fetch('/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userInput.value, path: filePath, filename: filename, conversation_id: conv_id_send })
+                body: JSON.stringify({ message: userInput.value, path: filePath, filename: filename, conversation_id: conv_id_send, use_local_model: modelTypeValue })
             })
             .then(response => response.json())
             .then(data => {
                 const conv_id_response = data.conversation_id;
                 convID.value = conv_id_response;
 
-                const botMessage = document.createElement('div');
-                botMessage.classList.add('message', 'bot-message');
-                botMessage.innerText = data.response;
+                // const botMessage = document.createElement('div');
+                // botMessage.classList.add('message', 'bot-message');
+                
+                const markdownBotHTML = marked.parse(data.response);
+                botMessage.innerHTML = decodeHTMLEntities(markdownBotHTML);
+
                 chatBody.appendChild(botMessage);
                 chatBody.scrollTop = chatBody.scrollHeight;
 
                 const botHistory = document.createElement('li');
-                botHistory.innerText = data.response;
+                botHistory.innerText = data.response; 
             });
 
             userInput.value = '';
@@ -359,7 +542,16 @@
             attachedFileDiv.style.display = isVisible ? 'none' : 'block'; 
             arrow.classList.toggle('expanded', !isVisible); 
         }
-        function handleChatClick(event, message, convId) {
+
+        function decodeHTMLEntities(text) {
+            const textArea = document.createElement('textarea');
+            textArea.innerHTML = text;
+            return textArea.value;
+        }
+
+        function handleChatClick(event, convId) {
+            console.log('handle chat click');
+            // debugger;
             event.preventDefault();
             const chatMessage = event.target.closest('.chat-item'); 
             document.querySelectorAll('.chat-item').forEach(msg => {
@@ -372,7 +564,6 @@
             chatMessage.style.borderRadius = '8px';
             chatMessage.style.padding = '10px'; 
             chatMessage.style.margin = '5px 0'; 
-            console.log("Chat message clicked:", message);
 
             fetch(`/get_chat_content/${convId}`) 
             .then(response => response.json())
@@ -399,8 +590,18 @@
                         messageDiv.classList.add('bot-message');
                     }
 
-                    messageDiv.innerText = chat.text.text; 
-                    chatBody.appendChild(messageDiv);
+
+                // Use marked to process the chat text
+                let markdownHTML = marked.parse(chat.text.text);
+
+                // Escape HTML code snippets
+                const escapedHTML = markdownHTML.replace(/<code>(.*?)<\/code>/g, (match, p1) => {
+                    return `<code>${p1.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>`;
+                });
+
+                messageDiv.innerHTML = escapedHTML;
+                chatBody.appendChild(messageDiv);
+                    chatBody.scrollTop = chatBody.scrollHeight;
                 });
 
             })
@@ -408,7 +609,33 @@
                 console.error("Error loading chat content:", error);
             });
         }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.delete-icon').forEach(deleteIcon => {
+                deleteIcon.addEventListener('click', (event) => {
+                    const convId = event.target.dataset.convId;
+                    const filename = event.target.dataset.filename;
+
+                    const formData = new FormData();
+                    formData.append('conv_id', convId);
+
+                    fetch(`/delete_chat/${convId}`, { method: 'POST' })
+                        .then(response => {
+                            if (response.ok) return response.json();
+                            throw new Error('Failed to delete chat');
+                        })
+                        .then(data => {
+                            const chatMessage = event.target.closest('.chat-item');
+                            if (chatMessage) chatMessage.remove();
+                        })
+                        .catch(error => console.error("Error deleting chat:", error));
+                });
+            });
+        });
+
         window.onload = function() {
+            
             var convID = document.getElementById('conv-id');
             convID.value = null; 
             var hiddenFilenameInput = document.getElementById('hidden-filename');
